@@ -1,27 +1,114 @@
-import { useState } from 'react'
-import * as React from 'react';
-import './App.css'
+import * as React from "react";
+import Button from "react-bootstrap/Button";
 
-const words = [ "apple", "banana", "car", "dog", "elephant", "forest", "grape", "house", "ice", "jungle",
-  "kangaroo", "lemon", "mountain", "notebook", "ocean", "pencil", "queen", "river", "sun", "tree",
-  "umbrella", "violin", "water", "xylophone", "yogurt", "zebra", "airplane", "book", "cloud", "drum",
-  "engine", "feather", "guitar", "hammer", "island", "jacket", "kite", "ladder", "mirror", "needle",
-  "orange", "pizza", "quilt", "robot", "snake", "train", "unicorn", "vase", "whale", "yarn"]
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./App.css";
+
+let allWords = [
+  "apple",
+  "banana",
+  "car",
+  "dog",
+  "elephant",
+  "forest",
+  "grape",
+  "house",
+  "ice",
+  "jungle",
+  "kangaroo",
+  "lemon",
+  "mountain",
+  "notebook",
+  "ocean",
+  "pencil",
+  "queen",
+  "river",
+  "sun",
+  "tree",
+  "umbrella",
+  "violin",
+  "water",
+  "xylophone",
+  "yogurt",
+  "zebra",
+  "airplane",
+  "book",
+  "cloud",
+  "drum",
+  "engine",
+  "feather",
+  "guitar",
+  "hammer",
+  "island",
+  "jacket",
+  "kite",
+  "ladder",
+  "mirror",
+  "needle",
+  "orange",
+  "pizza",
+  "quilt",
+  "robot",
+  "snake",
+  "train",
+  "unicorn",
+  "vase",
+  "whale",
+  "yarn",
+];
+
+type Interval = typeof setInterval;
+type IntervalRef = ReturnType<Interval>;
 
 function App() {
-  const [rndnum, setRndnum] = React.useState(0);
-    return( 
+  const timerRef = React.useRef<ReturnType<typeof setInterval>>(0);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [words, setWords] = React.useState<string[]>([]);
+  const [timeElapsed, setTimeElapsed] = React.useState(0);
+
+  React.useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setTimeElapsed((prev) => prev + 1);
+    }, 1000);
+
+    return () => {
+      setTimeElapsed(0);
+      clearInterval(timerRef.current);
+    };
+  }, [words]);
+
+  const pauseTimer = () => {
+    clearInterval(timerRef.current);
+    inputRef.current?.focus();
+  };
+
+  return (
     <div>
-      <button onClick={() => {    
-        let rndnum = Math.floor(Math.random() * 50);   
-        console.log(rndnum);
-        setRndnum(rndnum);  
-      }}>
+      <div>{timeElapsed}</div>
+      <Button type="button" onClick={pauseTimer}>
+        Reset timer
+      </Button>
+      <Button
+        type="button"
+        disabled={allWords.length === 0}
+        onClick={() => {
+          const rndnum = Math.floor(Math.random() * allWords.length);
+          const word = allWords[rndnum];
+          setWords((prevWords) => [word, ...prevWords]);
+          allWords = allWords.filter((_, index) => index !== rndnum);
+        }}
+      >
         SUBMIT
-      </button> <br />
-      {words[rndnum]}     
+      </Button>{" "}
+      <br />
+      <ul>
+        {words.map((word) => (
+          <li key={word}>{word}</li>
+        ))}
+      </ul>
+      <input ref={inputRef} />
     </div>
-    )     
+  );
 }
 
-export default App
+export default App;
