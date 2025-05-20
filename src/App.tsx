@@ -1,6 +1,6 @@
 import * as React from "react";
 import "./App.css";
-//import { stat } from "fs";
+import { useCallback } from "react";
 
 let allWords = [
   "apple",
@@ -53,102 +53,109 @@ let allWords = [
   "vase",
   "whale",
   "yarn",
+  "dupa",
 ];
 
-type Interval = typeof setInterval;
-type IntervalRef = ReturnType<Interval>;
-
+const maxTries = 10;
 
 function App() {
   const timerRef = React.useRef<ReturnType<typeof setInterval>>(0);
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  const [words, setWords] = React.useState<string[]>([]);
-  const [hidden_words, setHidden_words] = React.useState('');
+  const [selectedWord, setSelectedWord] = React.useState("");
   const [timeElapsed, setTimeElapsed] = React.useState(0);
-  const [inputLetter, setInputLetter] = React.useState<string>('');
-  const [actualword, setActualword] = React.useState<string>('');
   const [guessedLetters, setGuessedLetters] = React.useState<string[]>([]);
-  const [wrongGuesses, setWrongGuesses] = React.useState(0);
-  const [status, setStatus] = React.useState<string>('playing');
-  
-  const maxTries = 10;
-  const rndnum = Math.floor(Math.random() * allWords.length);
-  const word = allWords[rndnum];
-  const hidden_word = ('_'.repeat(word.length).trim());
-  React.useEffect(() => {
+  const [wrongGuesses, setWrongGuesses] = React.useState<string[]>([]);
+
+  const hidden_word = selectedWord
+    .split("")
+    .map((letter) => (guessedLetters.includes(letter) ? letter : "_"));
+  const isGameOver = wrongGuesses.length >= maxTries;
+  const isGameWon = !hidden_word.includes("_");
+
+  const startTimer = React.useCallback(() => {
     timerRef.current = setInterval(() => {
       setTimeElapsed((prev) => prev + 1);
     }, 1000);
+  }, []);
+
+  const pauseTimer = React.useCallback(() => {
+    clearInterval(timerRef.current);
+  }, []);
+
+  const resetTimer = React.useCallback(() => {
+    setTimeElapsed(0);
+    clearInterval(timerRef.current);
+    startTimer();
+  }, [startTimer]);
+
+  React.useEffect(() => {
+    if (isGameOver || isGameWon) {
+      pauseTimer();
+    }
+  }, [isGameOver, isGameWon, pauseTimer]);
+
+  React.useEffect(() => {
+    startTimer();
 
     return () => {
-      setTimeElapsed(0);
       clearInterval(timerRef.current);
+      setTimeElapsed(0);
     };
-  }, [words]);
+  }, [startTimer]);
 
-  const pauseTimer = () => {
-    clearInterval(timerRef.current);
-    inputRef.current?.focus();
-  };
+  const getNewWord = useCallback(() => {
+    const rndnum = Math.floor(Math.random() * allWords.length);
+    const word = allWords[rndnum];
+    setSelectedWord(word);
+    setGuessedLetters([]);
+    setWrongGuesses([]);
+    allWords = allWords.filter((_, index) => index !== rndnum);
+    resetTimer();
+  }, [resetTimer]);
+
+  React.useEffect(() => {
+    getNewWord();
+  }, [getNewWord]);
 
   return (
     <div>
+      <div>Tries: {wrongGuesses.length}</div>
       <div>{timeElapsed}</div>
-      <button type="button" onClick={pauseTimer}>
+      <button type="button" onClick={resetTimer}>
         Reset timer
       </button>
       <button
         type="button"
         disabled={allWords.length === 0}
-        onClick={() => {
-          const rndnum = Math.floor(Math.random() * allWords.length);
-          const word = allWords[rndnum];
-          setWords((prevWords) => [word, ...prevWords]);
-          allWords = allWords.filter((_, index) => index !== rndnum);
-          const hidden_word = ('_'.repeat(word.length).trim());
-        }  
-      }
+        onClick={getNewWord}
       >
         Randomize
       </button>{" "}
       <br />
-      <ul>
-          <li key={word}>{hidden_word}</li>
-      </ul>
-      <input ref={inputRef} />
-      <button
-        type="button"
-        onClick={() => {
-          React.useEffect(() => {
-            const letter = inputLetter;
-            if(guessedLetters.includes(letter) || status !== 'playing'){
-              setInputLetter(letter);        
-            }
-            else if(letter && status === 'playing'){
-              const guessed = [...guessedLetters, letter];
-              setGuessedLetters(guessed);
-            
-            if(!word.includes(letter)){
-              const wrong = wrongGuesses + 1;
-              setWrongGuesses(wrong);
-            }
+      <div>{hidden_word}</div>
+      <input
+        disabled={isGameOver || isGameWon}
+        onKeyDown={(event) => {
+          event.preventDefault();
+          const letter = event.key;
+          if (guessedLetters.includes(letter)) {
+            alert("You already guessed that letter");
+            return;
+          }
 
-            if(wrong >= maxTries){
-              setStatus('lost');
-            }
-            }
-            else{
-              const allGuessed = word.split('').every((char) => guessed.includes(char));
-              if (allGuessed) {
-                setStatus('won');
-              }
-            }
-            setInputLetter('');
-            },[inputLetter]);
-        }} 
-      >
-        Check
-      </button>
+          if (selectedWord.includes(letter)) {
+            setGuessedLetters((prevGuessedLetters) => [
+              ...prevGuessedLetters,
+              letter,
+            ]);
+          } else {
+            // Invalid letter
+            setWrongGuesses((prevGuessedLetters) => [
+              ...prevGuessedLetters,
+              letter,
+            ]);
+          }
+        }}
+      />
     </div>
   );
 }
