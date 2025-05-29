@@ -1,21 +1,29 @@
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
 .gridContainer{
+  margin: 0 auto;
+  height: 100%;
+  width: 100%;
   display: grid;
-  grid-template-columns: repeat(10,1fr);
+  grid-template-columns: repeat(8,1fr);
+  grid-template-rows: repeat(8,1fr);
 }
 .box{
-  background-color: #5c3317;
-  padding: 30px;
-  font-size: 24;
+  font-size: 24px;
   color: white;
   font-weight: bold;
   border: 3px black solid;
 }
-.box1{
-  background-color: white;
-  padding: 30px;
-  border: 3px black solid;
+
+.box.box-black {
+  background-color: #5c3317;
 }
 
-.board{
-  place-items: center;
+.box.box-white {
+  background-color: white;
 }
